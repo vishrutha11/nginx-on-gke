@@ -37,6 +37,13 @@ jobs:
       - name: Set kubectl context
         run: gcloud container clusters get-credentials gke-cluster --zone us-central1-a --project my-gke-project11
 
+      - name: Configure kubectl for GKE
+        run: |
+          gcloud container clusters get-credentials my-gke-cluster --zone us-central1-a --project $GCP_PROJECT
+          # 👇 Install the GKE auth plugin
+          gcloud components install gke-gcloud-auth-plugin --quiet
+          export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/nginx-deployment nginx=$IMAGE:$GITHUB_SHA || kubectl apply -f k8s/

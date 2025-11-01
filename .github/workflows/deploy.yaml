@@ -1,0 +1,39 @@
+name: Deploy to GKE
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE: us-central1-docker.pkg.dev/my-gke-project11/nginx-repo/nginx-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: my-gke-project11
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t $IMAGE:$GITHUB_SHA .
+          docker push $IMAGE:$GITHUB_SHA
+
+      - name: Set kubectl context
+        run: gcloud container clusters get-credentials gke-cluster --zone us-central1-a --project my-gke-project11
+
+      - name: Deploy to GKE
+        run: |
+          kubectl set image deployment/nginx-deployment nginx=$IMAGE:$GITHUB_SHA || kubectl apply -f k8s/
+          kubectl rollout status deployment/nginx-deployment

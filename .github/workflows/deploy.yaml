@@ -33,6 +33,8 @@ jobs:
         run: |
           docker build -t $IMAGE:$GITHUB_SHA .
           docker push $IMAGE:$GITHUB_SHA
+          docker tag $IMAGE:$GITHUB_SHA $IMAGE:latest
+          docker push $IMAGE:latest
 
       - name: Set kubectl context
         run: gcloud container clusters get-credentials gke-cluster --zone us-central1-a --project my-gke-project11
